@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 **HOW TO SETUP:**  
 make sure you have git, https://git-scm.com/downloads
 
@@ -31,3 +32,7 @@ i think thats all? hopefully this is clear enough
 
 **OH YEAH**:  
 if you wanna test this by using another device to connect or smth, make sure you know the ip of the host machine + the port (usually 8000) (u need to know this cause you gotta connect to the correct address on the other device), and also ensure that when you do runserver you do it like this "py manage.py runserver 0.0.0.0:8000" (0.0.0.0:8000 is to allow other devices to connect to the host's ip)
+=======
+# MessagesNotFound
+computer science 5 elective project
+>>>>>>> 842df3fb94cfffa7d986de884a1452305052d7f7
