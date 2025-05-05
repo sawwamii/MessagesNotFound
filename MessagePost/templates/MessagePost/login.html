@@ -1,0 +1,27 @@
+{% extends "MessagePost/index.html" %}
+{% load crispy_forms_tags %}
+{% block start %}
+
+<div class="content-section col-md-8 offset-md-2">
+    <form method="POST" style="border: 1px solid black; margin: 4%; padding: 10%; border-radius: 1%;">
+        {% csrf_token %}
+        
+        <fieldset class="form-group">
+            {{ form|crispy }}
+        </fieldset>
+        <center>
+        <div class="text-center">
+            <button style="font-family:verdana; background: rgb(145, 0, 60); font-size: 2rem; padding: 1%; margin-top: 10px; border-radius: 10px" class="btn btn-outline-info" type="submit">
+                <span class="glyphicon glyphicon-log-inn" style="color: white">Log In!</span> 
+            </button>
+        </div>
+
+        <br/>
+        <sub>
+            <a href="{% url 'register' %}" style="font-family:verdana; text-decoration: none; color: rgb(16, 0, 109); padding: 2%; cursor:pointer; margin-right: 2%">Don't have an account? Sign Up here!</a>
+        </sub>
+	    </center>
+    </form>
+</div>
+
+{% endblock start %}

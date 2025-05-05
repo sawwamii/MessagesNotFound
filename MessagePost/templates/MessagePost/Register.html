@@ -1,0 +1,18 @@
+{% extends "MessagePost/index.html" %}
+{% load crispy_forms_tags %}
+{% block start %}
+
+<div class="content-section col-md-8 col-md-offset-2">
+<form method="POST" style="border: 1px solid rgb(97, 1, 84); margin: 4%; padding:10%; border-radius:1%;">
+	{% csrf_token %}
+	<fieldset class="form-group">
+	{{ form|crispy}}
+	</fieldset>
+	<center>
+	<button style="font-family:verdana; background: rgb(177, 0, 68); border-radius: 10px; padding:2%; font-size: 2rem; color:white; margin-top: 10px;" class="btn btn-outline-info" type="submit"><span class="glyphicon glyphicon-check"></span>  Sign Up</button>
+	</center>
+	<br />
+	<sub><center><a href="{% url "login" %}" style="font-family: Verdana;text-decoration: none; color: rgb(16, 0, 109); padding:3%; cursor:pointer;">Already have an account? Log In here!</a></center></sub>
+</form>
+</div>
+{% endblock start %}

@@ -1,0 +1,178 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <title>{{title}}</title>
+    <style>
+        #postCard {
+          display: none;
+          border: 3px solid #560466;
+          border-radius: 10px;
+          padding: 10px;
+          margin-top: 5px;
+          width: 200px;
+        }
+        .input-group {
+          margin-bottom: 10px;
+        }
+        .topnav {
+          list-style-type: none;
+          overflow: hidden;
+          background-color: #c01c60;
+          font-family: Verdana;
+          padding: none;
+        }
+
+        .topnav a {
+          float: left;
+          color: #ffffff;
+          text-align: center;
+          padding: 12px 14px;
+          text-decoration: none;
+          font-size: 17px;
+          font-weight: 20;
+        }
+
+        .topnav a:hover {
+          background-color: #ffffff;
+          color: rgb(102, 0, 94);
+          font-size: 20px;
+          border-radius: 10px;
+        }
+
+        .topnav a.active {
+          background-color: #04AA6D;
+          color: white;
+        }
+      </style>
+</head>
+
+<body style="background-color: #ffe2ff;">
+  <header class="row">
+
+    <!-- navbar-->
+    <nav class="topnav" style="overflow: hidden">
+    <div class="container-fluid">
+      <div class="collapse navbar-collapse" id="mainNavBar">
+      <ul class="topnav">
+        <li><a href="{% url "index" %}">Feed</a></li>
+  
+        {% if user.is_authenticated %}
+        <li><a href="{% url "logout" %}"><span class="topnav" style="color: #ffffff"></span>  Logout</a></li>
+        {% else %}
+        <li><a href="{% url "register" %}"><span class="topnav" style="color: #ffffff"></span>  Sign up</a></li>
+        <li><a href="{% url "login" %}"><span class="topnav" style="color: #ffffff"></span>  Log in</a></li>
+        <p class="topnav" style="color: #ffffff; float: right; padding-right: 17px; font-weight: bold;">MessagesNotFound</p>
+        {% endif %}
+  
+      </ul>
+      </div>
+    </div>
+    </nav>
+  </header>
+  <div class="row">
+  {% block start %}
+  {% if user.is_authenticated %}
+        <center><h1 style="font-family:verdana; color: rgb(165, 6, 46)">Welcome back, {{user.username}}! ^o^</h1></center>
+  </div>
+    <center><p style="font-family:verdana; color: rgb(120, 6, 165)">The host IP is {{ip}}:8000.</p></center>
+    <center><p style="font-family:verdana; color: rgb(6, 56, 165)">Make sure this IP ({{ip}}) is inside of ALLOWED_HOSTS (in settings.py), otherwise... people cant connect.</p></center>
+    <center><button id="addButton">Add</button></center>
+    <!-- very crude css here, genuinely do not let any of this styling be any more than a placeholder because its atrocious ⚰️ -->
+    <div id="postCard" style="display: none">
+        <div class="input-group">
+          <label style="font-family:verdana; color: rgb(146, 6, 165)">Title:</label><br>
+          <input type="text" id="titleInput">
+        </div>
+        <div class="input-group">
+          <label style="font-family:verdana; color: rgb(6, 75, 165)">Body:</label><br>
+          <textarea id="bodyInput"></textarea>
+        </div>
+        <button id="sendBtn" style="font-family:verdana">Send</button>
+    </div>
+
+    <div id="cardTemplate" style="display: none; width: 200px; border: 3px solid #80002a; border-radius: 10px; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word; padding-left: 20px; padding-right: 20px;">
+        <div>
+          <h2 id="title" style="font-family:verdana; color: rgb(165, 6, 46)">Blank Title</h2>
+        </div>
+        <div>
+          <p id="body" style="font-family:verdana; color: rgb(165, 6, 138)">Lorem Ipsum</p>
+        </div>
+    </div>
+
+    <div style="display: flex; padding: 20px; gap: 10px;" id="postContainer"></div>
+    <script>
+        const socket = new WebSocket("ws://" + window.location.host + "/ws/post/")
+        const addButton = document.getElementById("addButton")
+        const cardTemplate = document.getElementById("cardTemplate")
+        const postCard = document.getElementById("postCard")
+        const postContainer = document.getElementById("postContainer")
+
+
+        function cloneCard(data) {
+            const cardClone = cardTemplate.cloneNode(true)
+            cardClone.style.display = "block"
+            cardClone.removeAttribute("id")
+    
+            const title = cardClone.querySelector('#title')
+            const body = cardClone.querySelector('#body')
+    
+            title.innerHTML = data.title
+            body.innerHTML = data.body
+    
+            postContainer.appendChild(cardClone)
+        }
+
+        //ignore the "errors" here, this works perfectly fine when you run it in a django server
+        //this contains the data of posts from the database (in json format)
+        let postData = {{ savedPosts|safe }}
+        postData.forEach((post) => {
+            let data = post.fields.data
+            const parsedJSON = JSON.parse(data)
+            
+            //creates cards from all data read
+            cloneCard(parsedJSON)
+        });
+    
+        //handles the receiving of messages
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data)
+            const msgs = document.getElementById("postContainer")
+            
+            cloneCard(data)
+        }
+        //sends a message thru the websocket thru the given url
+        addButton.addEventListener('click', () => {
+          if (postCard.style.display === 'none') {
+            postCard.style.display = 'block'
+          } else {
+            postCard.style.display = 'none'
+          }
+        })
+    
+        document.getElementById('sendBtn').addEventListener('click', () => {
+          const titleValue = document.getElementById('titleInput').value
+          const bodyValue = document.getElementById('bodyInput').value
+    
+          socket.send(JSON.stringify({
+                title: titleValue,
+                body: bodyValue
+            }))
+        })
+    </script>
+  {% else %}
+    <center>
+      <p style="font-family: Verdana; font-size: 30px; color: rgb(156, 0, 86)">Hello! Seems like you aren't logged in yet.</p>
+      <P style="font-family: Verdana; font-size: 30px; color: rgb(156, 0, 86)">Please log in by clicking</P>
+      <p style="font-family: Verdana; font-size: 35px; font-weight: bold; color: rgb(156, 0, 86)" > 'Log In' </p>
+      <p style="font-family: Verdana; font-size: 30px; color: rgb(156, 0, 86)"> to access the site! ^.^"</p>
+      <p style="font-family: Verdana; color: rgb(156, 0, 86)">MessagesNotFound @2025</p>
+    </center>
+
+  {% endif %}
+  {% endblock %}
+</body>
+
+</html>
