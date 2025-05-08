@@ -1,9 +1,9 @@
 from django.core.serializers import serialize
 from django.shortcuts import render
-from .models import postData
+from .models import postData, Comment
 import socket
 import json
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
@@ -17,8 +17,6 @@ from django.template import Context
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
 from .forms import CommentForm
-from .models import postData, Comment
-from django.shortcuts import get_object_or_404, redirect
 
   
 

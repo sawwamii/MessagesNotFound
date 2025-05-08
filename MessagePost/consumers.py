@@ -1,6 +1,6 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import postData
+from .models import postData, Comment
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 import base64 # For potential base64 encoded small files
