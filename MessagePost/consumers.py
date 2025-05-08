@@ -21,13 +21,15 @@ class ClickConsumer(AsyncWebsocketConsumer):
 
         title = data["title"]
         body = data["body"]
+        author = data["author"]
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 "type": "send_post",
                 "title": title,
-                "body": body
+                "body": body,
+                "author": author
             }
         )
         await sync_to_async(postData.objects.create)(data=text_data)
@@ -36,5 +38,6 @@ class ClickConsumer(AsyncWebsocketConsumer):
         # sends a message back to the user's websocket, i think?
         await self.send(text_data=json.dumps({
             "title": event["title"],
-            "body": event["body"]
+            "body": event["body"],
+            "author": event["author"]
         }))

@@ -90,16 +90,24 @@
           <label style="font-family:verdana; color: rgb(6, 75, 165)">Body:</label><br>
           <textarea id="bodyInput"></textarea>
         </div>
+        <div class="input-group">
+          <label style="font-family:verdana">Post anonymously?</label>
+          <input type="checkbox" id="isAnon" value="isAnon">
+        </div>
         <button id="sendBtn" style="font-family:verdana">Send</button>
     </div>
 
     <div id="cardTemplate" style="display: none; width: 200px; border: 3px solid #80002a; border-radius: 10px; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word; padding-left: 20px; padding-right: 20px;">
+        <div>
+          <h4 id="author" style="font-family:verdana; color: rgb(45, 66, 94)">Anonymous</h4>
+        </div>
         <div>
           <h2 id="title" style="font-family:verdana; color: rgb(165, 6, 46)">Blank Title</h2>
         </div>
         <div>
           <p id="body" style="font-family:verdana; color: rgb(165, 6, 138)">Lorem Ipsum</p>
         </div>
+        
     </div>
 
     <div style="display: flex; padding: 20px; gap: 10px;" id="postContainer"></div>
@@ -111,6 +119,7 @@
         const postContainer = document.getElementById("postContainer")
 
 
+
         function cloneCard(data) {
             const cardClone = cardTemplate.cloneNode(true)
             cardClone.style.display = "block"
@@ -118,9 +127,15 @@
     
             const title = cardClone.querySelector('#title')
             const body = cardClone.querySelector('#body')
-    
+            if (document.getElementById("isAnon").value == true) {
+              const author = "Anonymous"
+            } else {
+              const author = "{{user.username}}"
+            }
             title.innerHTML = data.title
             body.innerHTML = data.body
+            author.innerHTML = data.author  
+            
     
             postContainer.appendChild(cardClone)
         }
@@ -155,10 +170,16 @@
         document.getElementById('sendBtn').addEventListener('click', () => {
           const titleValue = document.getElementById('titleInput').value
           const bodyValue = document.getElementById('bodyInput').value
+          var authorValue = "Posted by: Anonymous"
+          if (document.getElementById("isAnon").checked == false) {
+              authorValue = "Posted by: {{user.username}}"
+          }
+          
     
           socket.send(JSON.stringify({
                 title: titleValue,
-                body: bodyValue
+                body: bodyValue,
+                author: authorValue
             }))
         })
     </script>
