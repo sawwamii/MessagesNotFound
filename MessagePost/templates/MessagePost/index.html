@@ -3,8 +3,8 @@
 <html lang="en">
 
 <head>
-
     <title>{{title}}</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <style>
         #postCard {
           display: none;
@@ -12,7 +12,7 @@
           border-radius: 10px;
           padding: 10px;
           margin-top: 5px;
-          width: 200px; /* Consider making this wider to accommodate media */
+          width: 200px;
         }
         .input-group {
           margin-bottom: 10px;
@@ -24,7 +24,6 @@
           font-family: Verdana;
           padding: none;
         }
-
         .topnav a {
           float: left;
           color: #ffffff;
@@ -34,45 +33,39 @@
           font-size: 17px;
           font-weight: 20;
         }
-
         .topnav a:hover {
           background-color: #ffffff;
           color: rgb(102, 0, 94);
           font-size: 20px;
           border-radius: 10px;
         }
-
         .topnav a.active {
           background-color: #04AA6D;
           color: white;
         }
-        /* Added styles for media display */
         .media-container img, .media-container video {
-            max-width: 100%; /* Ensure media fits within the card */
+            max-width: 100%;
             height: auto;
             margin-top: 10px;
             border-radius: 5px;
         }
-      </style>
+    </style>
 </head>
 
 <body style="background-color: #ffe2ff;">
   <header class="row">
-
     <nav class="topnav" style="overflow: hidden">
     <div class="container-fluid">
       <div class="collapse navbar-collapse" id="mainNavBar">
       <ul class="topnav">
         <li><a href="{% url "index" %}">Feed</a></li>
-  
         {% if user.is_authenticated %}
-        <li><a href="{% url "logout" %}"><span class="topnav" style="color: #ffffff"></span>  Logout</a></li>
+        <li><a href="{% url "logout" %}">Logout</a></li>
         {% else %}
-        <li><a href="{% url "register" %}"><span class="topnav" style="color: #ffffff"></span>  Sign up</a></li>
-        <li><a href="{% url "login" %}"><span class="topnav" style="color: #ffffff"></span>  Log in</a></li>
+        <li><a href="{% url "register" %}">Sign up</a></li>
+        <li><a href="{% url "login" %}">Log in</a></li>
         <p class="topnav" style="color: #ffffff; float: right; padding-right: 17px; font-weight: bold;">MessagesNotFound</p>
         {% endif %}
-  
       </ul>
       </div>
     </div>
@@ -86,7 +79,7 @@
     <center><p style="font-family:verdana; color: rgb(120, 6, 165)">The host IP is {{ip}}:8000.</p></center>
     <center><p style="font-family:verdana; color: rgb(6, 56, 165)">Make sure this IP ({{ip}}) is inside of ALLOWED_HOSTS (in settings.py), otherwise... people cant connect.</p></center>
     <center><button id="addButton">Add</button></center>
-    <div id="postCard" style="display: none">
+    <div id="postCard">
         <div class="input-group">
           <label style="font-family:verdana; color: rgb(146, 6, 165)">Title:</label><br>
           <input type="text" id="titleInput">
@@ -110,35 +103,42 @@
         <button id="sendBtn" style="font-family:verdana">Send</button>
     </div>
 
-    <div id="cardTemplate" style="display: none; width: 300px; /* Increased width for media */ border: 3px solid #80002a; border-radius: 10px; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word; padding-left: 20px; padding-right: 20px; padding-bottom: 10px;">
-        <div>
-          <h4 id="author" style="font-family:verdana; color: rgb(45, 66, 94)">Anonymous</h4>
-        </div>
-        <div>
-          <h2 id="title" style="font-family:verdana; color: rgb(165, 6, 46)">Blank Title</h2>
-        </div>
-        <div>
-          <p id="body" style="font-family:verdana; color: rgb(165, 6, 138)">Lorem Ipsum</p>
-        </div>
+    <div id="cardTemplate" style="display: none; width: 300px; border: 3px solid #80002a; border-radius: 10px; 
+    box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word; padding-left: 20px; 
+    padding-right: 20px; padding-bottom: 10px;">
+        <div><h4 id="author" style="font-family:verdana; color: rgb(45, 66, 94)">Anonymous</h4></div>
+        <div><h2 id="title" style="font-family:verdana; color: rgb(165, 6, 46)">Blank Title</h2></div>
+        <div><p id="body" style="font-family:verdana; color: rgb(165, 6, 138)">Lorem Ipsum</p></div>
         <div class="media-container">
             <img id="photoDisplay" src="" alt="Post photo" style="display:none;">
             <video id="videoDisplay" controls style="display:none;">
-                <source src="" type="video/mp4">
+              <source src="" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
         </div>
+        <div class="comment-section" style="margin-top: 10px;">
+            <form class="comment-form">
+                <input type="hidden" class="post-id-input" name="post_id" value="">
+                <textarea name="content" rows="2" placeholder="Add a comment..." required></textarea>
+                <br>
+                <button type="submit" style="background-color: #3c0068; color: white; padding: 5px 10px; border-radius: 5px;">
+                    Comment
+                </button>
+            </form>
+            <ul class="comments-list"></ul>
+        </div>
     </div>
+    
 
-    <div style="display: flex; flex-wrap: wrap; /* Allow wrapping for cards */ padding: 20px; gap: 10px;" id="postContainer"></div>
-    <script>
-        const socket = new WebSocket("ws://" + window.location.host + "/ws/post/")
-        const addButton = document.getElementById("addButton")
-        const cardTemplate = document.getElementById("cardTemplate")
-        const postCard = document.getElementById("postCard")
-        const postContainer = document.getElementById("postContainer")
+    <div style="display: flex; flex-wrap: wrap; padding: 20px; gap: 10px;" id="postContainer"></div>
 
-        // Function to read file as Data URL
-        function readFileAsDataURL(file) {
+    <script>const socket = new WebSocket("ws://" + window.location.host + "/ws/post/");
+      const addButton = document.getElementById("addButton");
+      const cardTemplate = document.getElementById("cardTemplate");
+      const postCard = document.getElementById("postCard");
+      const postContainer = document.getElementById("postContainer");
+
+      function readFileAsDataURL(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
@@ -146,125 +146,168 @@
                 reader.readAsDataURL(file);
             });
         }
-
-
-        function cloneCard(data) {
-            const cardClone = cardTemplate.cloneNode(true)
-            cardClone.style.display = "block"
-            cardClone.removeAttribute("id")
-    
-            const titleEl = cardClone.querySelector('#title')
-            const bodyEl = cardClone.querySelector('#body')
-            const authorEl = cardClone.querySelector('#author') // Corrected selector
-            const photoDisplayEl = cardClone.querySelector('#photoDisplay')
-            const videoDisplayEl = cardClone.querySelector('#videoDisplay')
-            const videoSourceEl = videoDisplayEl.querySelector('source')
-
-
-            titleEl.innerHTML = data.title || "Blank Title"
-            bodyEl.innerHTML = data.body || "Lorem Ipsum"
-            authorEl.innerHTML = data.author || "Posted by: Anonymous" // Use data.author directly
-
-            if (data.photo_url) {
-                photoDisplayEl.src = data.photo_url;
-                photoDisplayEl.style.display = "block";
-            } else {
-                photoDisplayEl.style.display = "none";
-            }
-
-            if (data.video_url) {
-                videoSourceEl.src = data.video_url;
-                videoDisplayEl.load(); // Important to load new source
-                videoDisplayEl.style.display = "block";
-            } else {
-                videoDisplayEl.style.display = "none";
-            }
-            
-            postContainer.appendChild(cardClone)
-        }
-
-        //ignore the "errors" here, this works perfectly fine when you run it in a django server
-        //this contains the data of posts from the database (in json format)
-        let postData = {{ savedPosts|safe }}
-        postData.forEach((post) => {
-            let fields = post.fields;
-            let textData = JSON.parse(fields.data); // Main text data
-            
-            let displayData = {
-                title: textData.title,
-                body: textData.body,
-                author: textData.author,
-                photo_url: fields.photo ? `/media/${fields.photo}` : null,
-                video_url: fields.video ? `/media/${fields.video}` : null 
-            };
-            cloneCard(displayData);
-        });
-    
-        //handles the receiving of messages
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data)
-            // const msgs = document.getElementById("postContainer") // Not used
-            
-            cloneCard(data)
-        }
-        //sends a message thru the websocket thru the given url
-        addButton.addEventListener('click', () => {
-          if (postCard.style.display === 'none') {
-            postCard.style.display = 'block'
-          } else {
-            postCard.style.display = 'none'
+      // Function to create a post card
+      function cloneCard(data) {
+          const cardClone = cardTemplate.cloneNode(true);
+          cardClone.style.display = "block";
+          cardClone.removeAttribute("id");
+      
+          const titleEl = cardClone.querySelector('#title');
+          const bodyEl = cardClone.querySelector('#body');
+          const authorEl = cardClone.querySelector('#author');
+          const photoDisplayEl = cardClone.querySelector('#photoDisplay');
+          const videoDisplayEl = cardClone.querySelector('#videoDisplay');
+          const videoSourceEl = videoDisplayEl.querySelector('source');
+          const commentForm = cardClone.querySelector('.comment-form');
+          const postIdInput = cardClone.querySelector('.post-id-input');
+          const commentsList = cardClone.querySelector(".comments-list");
+      
+          postIdInput.value = data.id;
+          cardClone.setAttribute("data-post-id", data.id);
+          titleEl.innerHTML = data.title || "Blank Title";
+          bodyEl.innerHTML = data.body || "Lorem Ipsum";
+          authorEl.innerHTML = data.author || "Posted by: Anonymous";
+      
+          if (data.photo_url) {
+              photoDisplayEl.src = data.photo_url;
+              photoDisplayEl.style.display = "block";
           }
-        })
-    
-        document.getElementById('sendBtn').addEventListener('click', async () => {
-          const titleValue = document.getElementById('titleInput').value
-          const bodyValue = document.getElementById('bodyInput').value
-          var authorValue = "Posted by: Anonymous"
-          if (document.getElementById("isAnon").checked == false) {
-              authorValue = "Posted by: {{user.username}}"
+      
+          if (data.video_url) {
+              videoSourceEl.src = data.video_url;
+              videoDisplayEl.load();
+              videoDisplayEl.style.display = "block";
           }
 
-          const photoFile = document.getElementById('photoInput').files[0];
-          const videoFile = document.getElementById('videoInput').files[0];
+          if (data.comments.length > 0) {
+            data.comments.forEach((comment) => {
+              const commentItem = document.createElement("li");
+              commentItem.innerHTML = `<strong>${comment.author}:</strong> ${comment.content}`;
+              commentsList.appendChild(commentItem);
+            });
+          }
 
-          let photoDataURL = null;
-          if (photoFile) {
-              try {
-                photoDataURL = await readFileAsDataURL(photoFile);
-              } catch (e) {
-                console.error("Error reading photo file:", e);
-                alert("Error reading photo file.");
-                return;
+          // ✅ Fix: Preventing Form Resubmission Prompt
+          commentForm.addEventListener("submit", function (e) {
+              e.preventDefault(); // Prevents any resubmission prompt
+              const postId = postIdInput.value;
+              const content = commentForm.querySelector('textarea[name="content"]').value.trim();
+      
+              if (!content) {
+                  alert("⚠️ Cannot submit an empty comment!");
+                  return;
               }
+      
+              console.log(`✅ Sending comment for post ID: ${postId}`);
+      
+              socket.send(JSON.stringify({
+                  type: "new_comment",
+                  post_id: postId,
+                  comment: content,
+                  user: "{{ user.username }}"
+              }));
+      
+              // ✅ Instantly add the comment to the UI before WebSocket responds
+              const commentItem = document.createElement('li');
+              commentItem.innerHTML = `<strong>{{ user.username }}:</strong> ${content}`;
+              commentsList.appendChild(commentItem);
+
+              const storedComments = JSON.parse(localStorage.getItem(`comments_${postId}`)) || [];
+              storedComments.push({ user: "{{ user.username }}", content: content });
+              localStorage.setItem(`comments_${postId}`, JSON.stringify(storedComments));
+
+              commentForm.querySelector('textarea[name="content"]').value = ""; // Clear input
+          });
+      
+          postContainer.appendChild(cardClone);
+      }
+      
+      // Load existing posts from Django and render them
+      let postData = {{ savedPosts|safe }};
+      postData.forEach((post) => {
+          let fields = post.fields;
+          let textData = JSON.parse(fields.data);
+          let displayData = {
+              id: post.pk,
+              title: textData.title,
+              body: textData.body,
+              author: textData.author,
+              photo_url: fields.photo ? `/media/${fields.photo}` : null,
+              video_url: fields.video ? `/media/${fields.video}` : null,
+              comments: fields.comments || []
+          };
+          cloneCard(displayData);
+      });
+      
+      socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "new_comment") {
+          const postId = data.post_id;
+          console.log("✅ Received comment for post ID:", postId);
+
+          // Find the correct post card by its ID
+          const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+          if (!postCard) {
+            console.warn("❗ No post card found for ID:", postId);
+              return;
           }
 
-          let videoDataURL = null;
-          if (videoFile) {
-              try {
-                videoDataURL = await readFileAsDataURL(videoFile);
-              } catch (e) {
-                console.error("Error reading video file:", e);
-                alert("Error reading video file. Files might be too large for this method.");
-                return;
-              }
+          console.log("✅ Found matching post card:", postCard);
+
+          // Append the new comment to the correct post
+          const commentsList = postCard.querySelector('.comment-section ul');
+          if (!commentsList) {
+              console.warn("⚠️ No comment section found, creating one.");
+              const newCommentsList = document.createElement("ul");
+              postCard.querySelector(".comment-section").appendChild(newCommentsList);
+              commentsList = newCommentsList;
           }
-          
+
+          const commentItem = document.createElement('li');
+          commentItem.innerHTML = `<strong>${data.user}:</strong> ${data.comment}`;
+          commentsList.appendChild(commentItem);
+
+        }
+      };
+
+
+      
+      // Toggle post creation form visibility
+      addButton.addEventListener("click", () => {
+          postCard.style.display = (postCard.style.display === "none") ? "block" : "none";
+      });
+      
+      // Send new post data through WebSocket
+      document.getElementById("sendBtn").addEventListener("click", async () => {
+          const titleValue = document.getElementById("titleInput").value;
+          const bodyValue = document.getElementById("bodyInput").value;
+          let authorValue = "Posted by: Anonymous";
+      
+          if (!document.getElementById("isAnon").checked) {
+              authorValue = "Posted by: {{ user.username }}";
+          }
+      
+          const photoFile = document.getElementById("photoInput").files[0];
+          const videoFile = document.getElementById("videoInput").files[0];
+          let photoDataURL = photoFile ? await readFileAsDataURL(photoFile) : null;
+          let videoDataURL = videoFile ? await readFileAsDataURL(videoFile) : null;
+      
           socket.send(JSON.stringify({
-                title: titleValue,
-                body: bodyValue,
-                author: authorValue,
-                photo: photoDataURL, // send photo as data URL
-                video: videoDataURL  // send video as data URL
-            }));
-            
-            // Clear inputs after sending
-            document.getElementById('titleInput').value = '';
-            document.getElementById('bodyInput').value = '';
-            document.getElementById('photoInput').value = null; // clear file input
-            document.getElementById('videoInput').value = null; // clear file input
-            postCard.style.display = 'none';
-        })
-    </script>
+              title: titleValue,
+              body: bodyValue,
+              author: authorValue,
+              photo: photoDataURL,
+              video: videoDataURL
+          }));
+      
+          document.getElementById("titleInput").value = "";
+          document.getElementById("bodyInput").value = "";
+          document.getElementById("photoInput").value = null;
+          document.getElementById("videoInput").value = null;
+          postCard.style.display = "none";
+      });</script>
+  
   {% else %}
     <center>
       <p style="font-family: Verdana; font-size: 30px; color: rgb(156, 0, 86)">Hello! Seems like you aren't logged in yet.</p>
@@ -273,7 +316,6 @@
       <p style="font-family: Verdana; font-size: 30px; color: rgb(156, 0, 86)"> to access the site! ^.^"</p>
       <p style="font-family: Verdana; color: rgb(156, 0, 86)">MessagesNotFound @2025</p>
     </center>
-
   {% endif %}
   {% endblock %}
 </body>

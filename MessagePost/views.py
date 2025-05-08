@@ -16,6 +16,9 @@ from django.template.loader import get_template
 from django.template import Context
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
+from .forms import CommentForm
+from .models import postData, Comment
+from django.shortcuts import get_object_or_404, redirect
 
   
 
@@ -33,6 +36,13 @@ def index(request):
     savedPosts = postData.objects.all()
     savedPosts_json = json.loads(serialize('json', savedPosts))
     return render(request, 'MessagePost/index.html', {'title':'MESSAGES_NOT_FOUND', 'ip': ip, 'savedPosts': savedPosts_json})
+    posts = postData.objects.all().order_by('-id')
+    comment_form = CommentForm()
+    return render(request, 'index.html', {
+        'posts': posts,
+        'comment_form': comment_form,
+        'ip': get_client_ip(request),
+    })
 
 def register(request):
     if request.method == 'POST':
@@ -77,3 +87,15 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(postData, pk=post_id)
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.post = post
+        comment.author = request.user
+        comment.save()
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
