@@ -127,11 +127,8 @@
     
             const title = cardClone.querySelector('#title')
             const body = cardClone.querySelector('#body')
-            if (document.getElementById("isAnon").value == true) {
-              const author = "Anonymous"
-            } else {
-              const author = "{{user.username}}"
-            }
+            const author = cardClone.querySelector('#author')
+            
             title.innerHTML = data.title
             body.innerHTML = data.body
             author.innerHTML = data.author  
@@ -175,7 +172,6 @@
               authorValue = "Posted by: {{user.username}}"
           }
           
-    
           socket.send(JSON.stringify({
                 title: titleValue,
                 body: bodyValue,
