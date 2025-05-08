@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os # <--- ADD THIS LINE
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,13 +26,13 @@ SECRET_KEY = 'django-insecure-a^n613-up2e#o+hrzy=iw-gj26q$st0vqx*wko24ze!lw-m6rz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '192.168.1.5']
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.1.5'] # Ensure your actual IP for testing is here if needed
 
 # Application definition
 
 INSTALLED_APPS = [
     'daphne',
-    'MessagePost',
+    'MessagePost', # Your app
     'channels',
     'crispy_forms',
     'crispy_bootstrap5',
@@ -53,12 +54,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'MessagesNotFound.urls'
+ROOT_URLCONF = 'MessagesNotFound.urls' # Correct: uses the urls.py in MessagesNotFound folder
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], # OPTIONAL: If you have a global templates folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,15 +126,23 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+# Add STATICFILES_DIRS if you have a global static folder not within an app
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-CRISPY_TEMPLATE_PACK = 'bootstrap5'
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+CRISPY_TEMPLATE_PACK = 'bootstrap5' # This was CRISPY_TEMPLATE_PACK = 'bootstrap5'
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5" # This was CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+# Email settings (placeholder from your file)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = ...
+# EMAIL_HOST = ... # You'll need to configure this for actual email sending
 
+ASGI_APPLICATION = "MessagesNotFound.asgi.application" # Correct
 
-ASGI_APPLICATION = "MessagesNotFound.asgi.application"
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

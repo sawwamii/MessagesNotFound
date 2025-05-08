@@ -12,7 +12,7 @@
           border-radius: 10px;
           padding: 10px;
           margin-top: 5px;
-          width: 200px;
+          width: 200px; /* Consider making this wider to accommodate media */
         }
         .input-group {
           margin-bottom: 10px;
@@ -46,13 +46,19 @@
           background-color: #04AA6D;
           color: white;
         }
+        /* Added styles for media display */
+        .media-container img, .media-container video {
+            max-width: 100%; /* Ensure media fits within the card */
+            height: auto;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
       </style>
 </head>
 
 <body style="background-color: #ffe2ff;">
   <header class="row">
 
-    <!-- navbar-->
     <nav class="topnav" style="overflow: hidden">
     <div class="container-fluid">
       <div class="collapse navbar-collapse" id="mainNavBar">
@@ -80,7 +86,6 @@
     <center><p style="font-family:verdana; color: rgb(120, 6, 165)">The host IP is {{ip}}:8000.</p></center>
     <center><p style="font-family:verdana; color: rgb(6, 56, 165)">Make sure this IP ({{ip}}) is inside of ALLOWED_HOSTS (in settings.py), otherwise... people cant connect.</p></center>
     <center><button id="addButton">Add</button></center>
-    <!-- very crude css here, genuinely do not let any of this styling be any more than a placeholder because its atrocious ⚰️ -->
     <div id="postCard" style="display: none">
         <div class="input-group">
           <label style="font-family:verdana; color: rgb(146, 6, 165)">Title:</label><br>
@@ -91,13 +96,21 @@
           <textarea id="bodyInput"></textarea>
         </div>
         <div class="input-group">
+            <label style="font-family:verdana; color: rgb(6, 165, 75)">Photo:</label><br>
+            <input type="file" id="photoInput" accept="image/*">
+        </div>
+        <div class="input-group">
+            <label style="font-family:verdana; color: rgb(165, 75, 6)">Video:</label><br>
+            <input type="file" id="videoInput" accept="video/*">
+        </div>
+        <div class="input-group">
           <label style="font-family:verdana">Post anonymously?</label>
           <input type="checkbox" id="isAnon" value="isAnon">
         </div>
         <button id="sendBtn" style="font-family:verdana">Send</button>
     </div>
 
-    <div id="cardTemplate" style="display: none; width: 200px; border: 3px solid #80002a; border-radius: 10px; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word; padding-left: 20px; padding-right: 20px;">
+    <div id="cardTemplate" style="display: none; width: 300px; /* Increased width for media */ border: 3px solid #80002a; border-radius: 10px; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word; padding-left: 20px; padding-right: 20px; padding-bottom: 10px;">
         <div>
           <h4 id="author" style="font-family:verdana; color: rgb(45, 66, 94)">Anonymous</h4>
         </div>
@@ -107,10 +120,16 @@
         <div>
           <p id="body" style="font-family:verdana; color: rgb(165, 6, 138)">Lorem Ipsum</p>
         </div>
-        
+        <div class="media-container">
+            <img id="photoDisplay" src="" alt="Post photo" style="display:none;">
+            <video id="videoDisplay" controls style="display:none;">
+                <source src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
     </div>
 
-    <div style="display: flex; padding: 20px; gap: 10px;" id="postContainer"></div>
+    <div style="display: flex; flex-wrap: wrap; /* Allow wrapping for cards */ padding: 20px; gap: 10px;" id="postContainer"></div>
     <script>
         const socket = new WebSocket("ws://" + window.location.host + "/ws/post/")
         const addButton = document.getElementById("addButton")
@@ -118,6 +137,15 @@
         const postCard = document.getElementById("postCard")
         const postContainer = document.getElementById("postContainer")
 
+        // Function to read file as Data URL
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
 
 
         function cloneCard(data) {
@@ -125,18 +153,33 @@
             cardClone.style.display = "block"
             cardClone.removeAttribute("id")
     
-            const title = cardClone.querySelector('#title')
-            const body = cardClone.querySelector('#body')
-            if (document.getElementById("isAnon").value == true) {
-              const author = "Anonymous"
+            const titleEl = cardClone.querySelector('#title')
+            const bodyEl = cardClone.querySelector('#body')
+            const authorEl = cardClone.querySelector('#author') // Corrected selector
+            const photoDisplayEl = cardClone.querySelector('#photoDisplay')
+            const videoDisplayEl = cardClone.querySelector('#videoDisplay')
+            const videoSourceEl = videoDisplayEl.querySelector('source')
+
+
+            titleEl.innerHTML = data.title || "Blank Title"
+            bodyEl.innerHTML = data.body || "Lorem Ipsum"
+            authorEl.innerHTML = data.author || "Anonymous" // Use data.author directly
+
+            if (data.photo_url) {
+                photoDisplayEl.src = data.photo_url;
+                photoDisplayEl.style.display = "block";
             } else {
-              const author = "{{user.username}}"
+                photoDisplayEl.style.display = "none";
             }
-            title.innerHTML = data.title
-            body.innerHTML = data.body
-            author.innerHTML = data.author  
+
+            if (data.video_url) {
+                videoSourceEl.src = data.video_url;
+                videoDisplayEl.load(); // Important to load new source
+                videoDisplayEl.style.display = "block";
+            } else {
+                videoDisplayEl.style.display = "none";
+            }
             
-    
             postContainer.appendChild(cardClone)
         }
 
@@ -144,17 +187,23 @@
         //this contains the data of posts from the database (in json format)
         let postData = {{ savedPosts|safe }}
         postData.forEach((post) => {
-            let data = post.fields.data
-            const parsedJSON = JSON.parse(data)
+            let fields = post.fields;
+            let textData = JSON.parse(fields.data); // Main text data
             
-            //creates cards from all data read
-            cloneCard(parsedJSON)
+            let displayData = {
+                title: textData.title,
+                body: textData.body,
+                author: textData.author,
+                photo_url: fields.photo ? `/media/${fields.photo}` : null,
+                video_url: fields.video ? `/media/${fields.video}` : null 
+            };
+            cloneCard(displayData);
         });
     
         //handles the receiving of messages
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data)
-            const msgs = document.getElementById("postContainer")
+            // const msgs = document.getElementById("postContainer") // Not used
             
             cloneCard(data)
         }
@@ -167,20 +216,53 @@
           }
         })
     
-        document.getElementById('sendBtn').addEventListener('click', () => {
+        document.getElementById('sendBtn').addEventListener('click', async () => {
           const titleValue = document.getElementById('titleInput').value
           const bodyValue = document.getElementById('bodyInput').value
           var authorValue = "Posted by: Anonymous"
           if (document.getElementById("isAnon").checked == false) {
               authorValue = "Posted by: {{user.username}}"
           }
+
+          const photoFile = document.getElementById('photoInput').files[0];
+          const videoFile = document.getElementById('videoInput').files[0];
+
+          let photoDataURL = null;
+          if (photoFile) {
+              try {
+                photoDataURL = await readFileAsDataURL(photoFile);
+              } catch (e) {
+                console.error("Error reading photo file:", e);
+                alert("Error reading photo file.");
+                return;
+              }
+          }
+
+          let videoDataURL = null;
+          if (videoFile) {
+              try {
+                videoDataURL = await readFileAsDataURL(videoFile);
+              } catch (e) {
+                console.error("Error reading video file:", e);
+                alert("Error reading video file. Files might be too large for this method.");
+                return;
+              }
+          }
           
-    
           socket.send(JSON.stringify({
                 title: titleValue,
                 body: bodyValue,
-                author: authorValue
-            }))
+                author: authorValue,
+                photo: photoDataURL, // send photo as data URL
+                video: videoDataURL  // send video as data URL
+            }));
+            
+            // Clear inputs after sending
+            document.getElementById('titleInput').value = '';
+            document.getElementById('bodyInput').value = '';
+            document.getElementById('photoInput').value = null; // clear file input
+            document.getElementById('videoInput').value = null; // clear file input
+            postCard.style.display = 'none';
         })
     </script>
   {% else %}
