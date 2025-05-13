@@ -33,14 +33,11 @@ def index(request):
     ip = get_ip()
     savedPosts = postData.objects.all()
     savedPosts_json = json.loads(serialize('json', savedPosts))
+
+    post = postData.objects.get(pk=134)
+    print(post)
+
     return render(request, 'MessagePost/index.html', {'title':'MESSAGES_NOT_FOUND', 'ip': ip, 'savedPosts': savedPosts_json})
-    posts = postData.objects.all().order_by('-id')
-    comment_form = CommentForm()
-    return render(request, 'index.html', {
-        'posts': posts,
-        'comment_form': comment_form,
-        'ip': get_client_ip(request),
-    })
 
 def register(request):
     if request.method == 'POST':

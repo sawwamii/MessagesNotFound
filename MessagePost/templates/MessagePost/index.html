@@ -179,14 +179,6 @@
               videoDisplayEl.style.display = "block";
           }
 
-          if (data.comments && data.comments.length > 0) {
-            data.comments.forEach((comment) => {
-              const commentItem = document.createElement("li");
-              commentItem.innerHTML = `<strong>${comment.author}:</strong> ${comment.content}`;
-              commentsList.appendChild(commentItem);
-            });
-          }
-
           // ✅ Fix: Preventing Form Resubmission Prompt
           commentForm.addEventListener("submit", function (e) {
               e.preventDefault(); // Prevents any resubmission prompt
@@ -208,17 +200,18 @@
               }));
       
               // ✅ Instantly add the comment to the UI before WebSocket responds
-              const commentItem = document.createElement('li');
-              commentItem.innerHTML = `<strong>{{ user.username }}:</strong> ${content}`;
-              commentsList.appendChild(commentItem);
-
-              const storedComments = JSON.parse(localStorage.getItem(`comments_${postId}`)) || [];
-              storedComments.push({ user: "{{ user.username }}", content: content });
-              localStorage.setItem(`comments_${postId}`, JSON.stringify(storedComments));
+              /**/
 
               commentForm.querySelector('textarea[name="content"]').value = ""; // Clear input
           });
-      
+          
+          if (data.comments) {
+            data.comments.forEach((comment) => {
+              const commentItem = document.createElement('li');
+                commentItem.innerHTML = `<strong>${ comment.user }:</strong> ${comment.comment}`;
+                commentsList.appendChild(commentItem);
+            })
+          }
           postContainer.appendChild(cardClone);
       }
       
@@ -234,7 +227,7 @@
               author: textData.author,
               photo_url: fields.photo ? `/media/${fields.photo}` : null,
               video_url: fields.video ? `/media/${fields.video}` : null,
-              comments: fields.comments || []
+              comments: textData.comments || []
           };
           cloneCard(displayData);
       });
